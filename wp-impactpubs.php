@@ -44,6 +44,8 @@ add_action('impactpubs_daily_update', 'impactpubs_update_lists');
 
 add_shortcode('publications', 'impactpubs_display_pubs');
 
+add_shortcode('allpubs', 'impactpubs_list_all_pubs');
+
 //installation procedures:
 //schedule daily event to update publication lists
 function impactpubs_install() {
@@ -223,7 +225,37 @@ function impactpubs_update_lists(){
 	}
 }
 
+function impactpubs_list_all_pubs($shortcode_atts) {
+        global $wpdb;
+        //Set defaults and extract shortcode attributes
+        $users = get_users( array() );
+        $pub_items = array();
+        foreach ($users as $user ){
+                $id = $user->ID;
+                $pubsource = get_user_meta( $id, '_impactpubs_pubsource', TRUE);
+        #        //if no entry in meta database (user has not set up their profile),
+        #        //then skip to the next one
+                if ( $pubsource == '' ) {
+                        return print_r($id);
+                        continue;
+                }
+                $userz = $wpdb->get_row("SELECT * FROM $wpdb->users WHERE ID = '$id'", ARRAY_A);
+        #       print_r($userz);
+                $user_id = $userz['ID'];
+        #       print_r($user_id);
+                $result = $wpdb->get_row("
+                        SELECT * FROM $wpdb->usermeta
+                        WHERE user_id = $user_id
+                        AND meta_key = '_impactpubs_html' ", ARRAY_A);
+                if ($result) $pub_items[]=$result['meta_value'];
+                else return 'Publication information not available';
+        #       return 'Publication information not available';
+        #       $pub_items[]=$id;
+        }
 
+        foreach ($pub_items as $item) print_r($item);
+
+}
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 hooked by shortcode [publications]
